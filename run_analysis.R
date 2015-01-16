@@ -1,11 +1,12 @@
 source("download.R")
 source("analysis.R")
 
-outputFilename <- "data/tidyHARDataset.txt"
-url <- paste(c(
+inputUrl <- paste(c(
     "https://d396qusza40orc.cloudfront.net",
     "/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip"))
-dataFile <- downloadData(url, filename = "HARDataset.zip")
+inputFile <- downloadData(inputUrl, filename = "HARDataset.zip")
+outputFile <- "data/tidyHARDataset.txt"
 
-dataSet <- processHARDataset(dataFile)
-write.table(dataSet, file=outputFilename, row.name=FALSE)
+
+dataSet <- processHARDataset(inputFile)
+saveHARDataset(dataSet, outputFile)
