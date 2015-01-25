@@ -22,13 +22,13 @@ test_tidyFeatureName <- function() {
 }
 
 test_tidyLabels <- function() {
-    labelsData <- data.frame(
+    labels.data <- data.frame(
         V1 = c(1, 2, 3),
         V2 = c("WALKING", "WALKING_UPSTAIRS", "RUNNING"),
         stringsAsFactors = FALSE)
 
     checkEquals(
-        tidyLabels(labelsData),
+        tidyLabels(labels.data),
         data.frame(
             id = c(1, 2, 3),
             name = c("Walking", "Walking Upstairs", "Running"),
@@ -36,7 +36,7 @@ test_tidyLabels <- function() {
 }
 
 test_tidyFeatures <- function() {
-    featuresData <- data.frame(
+    features.data <- data.frame(
         V1 = c(1, 19, 44, 77),
         V2 = c(
             "tBodyAcc-mean()-X",
@@ -46,9 +46,51 @@ test_tidyFeatures <- function() {
         stringsAsFactors = FALSE)
 
     checkEquals(
-        tidyFeatures(featuresData),
+        tidyFeatures(features.data),
         data.frame(
             id = c(1, 44),
             name = c("tBodyAcc.mean.X", "tGravityAcc.std.X"),
+            stringsAsFactors = FALSE))
+}
+
+test_tidyDataset <- function() {
+    # The messy.dataset, features and labels variables are defined in the test
+    # runner script so that they are available here
+    features <- tidyFeatures(features)
+    labels <- tidyLabels(labels)
+
+    checkEquals(
+        tidyDataset(messy.dataset, features, labels),
+        data.frame(
+            subject.id = rep(1:4, times = 3),
+            activity.name = rep(c("Walking", "Sitting", "Laying"), times = 4),
+            tBodyAcc.mean.X = rep(1:4, times = 3),
+            tBodyAcc.std.Z = rep(5:8, times = 3),
+            stringsAsFactors = FALSE))
+}
+
+test_processDataset <- function() {
+    # The messy.dataset, features and labels variables are defined in the test
+    # runner script so that they are available here
+    checkEquals(
+        processDataset(messy.dataset, messy.dataset, features, labels),
+        data.frame(
+            subject.id = rep(1:4, times=6),
+            activity.name = rep(c("Walking", "Sitting", "Laying"), times = 8),
+            tBodyAcc.mean.X = rep(1:4, times = 6),
+            tBodyAcc.std.Z = rep(5:8, times = 6),
+            stringsAsFactors = FALSE))
+}
+
+test_processAveragesDataset <- function() {
+    dataset <- processDataset(messy.dataset, messy.dataset, features, labels)
+
+    checkEquals(
+        processAveragesDataset(dataset),
+        data.frame(
+            subject.id = rep(1:4, each=3),
+            activity.name = rep(c("Laying", "Sitting", "Walking"), times = 4),
+            tBodyAcc.mean.X = rep(1:4, each=3),
+            tBodyAcc.std.Z = rep(5:8, each=3),
             stringsAsFactors = FALSE))
 }

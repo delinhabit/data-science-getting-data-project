@@ -23,12 +23,13 @@ downloadData <- function(url, filename = NULL) {
     destfile
 }
 
-
 inferFilenameFromUrl <- function(url) {
+    # Infer the filename from the provided URL
+    # Handles properly normal filenames but also urlencoded paths
     parts <- strsplit(url, "/", fixed = T)[[1]]
-    filenamePart <- parts[[length(parts)]]
+    filename.part <- parts[[length(parts)]]
 
-    filenameParts <- strsplit(URLdecode(filenamePart), "/", fixed = T)[[1]]
-    filename <- filenameParts[[length(filenameParts)]]
+    filename.parts <- strsplit(URLdecode(filename.part), "/", fixed = T)[[1]]
+    filename <- filename.parts[[length(filename.parts)]]
     gsub(" ", "_", filename)
 }

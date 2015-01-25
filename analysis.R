@@ -1,18 +1,24 @@
 library(dplyr)
 library(reshape2)
 
-processDataset <- function(zipFilename) {
-    # Process the UCI HAR dataset located in the provided file and create a
-    # tidy dataset as required by step 4 ot the assignment.
+processDataset <- function(train.dataset, test.dataset, features, labels) {
+    # Process the messy UCI HAR dataset as required by step 4 of the assignment.
     #
     # Arguments:
-    #    zipFilename - path to the zip file containing the UCI HAR Dataset
+    #    train.dataset - a list of data frames containing the train dataset
+    #    test.dataset - a list of data frames containing the test dataset
+    #    features - a data frame containing the feature names
+    #    labels - a data frame containing the label names
     #
-    features <- tidyFeatures(readData(zipFilename, "features.txt"))
-    labels <- tidyLabels(readData(zipFilename, "activity_labels.txt"))
+    # train.dataset and test.dataset are expected to contain the following
+    # tags: subjects, labels and features, pointing to the corresponding data
+    # frames
+    #
+    features <- tidyFeatures(features)
+    labels <- tidyLabels(labels)
 
-    trainDataset <- tidyDataset(zipFilename, "train", features, labels)
-    testDataset <- tidyDataset(zipFilename, "test", features, labels)
+    trainDataset <- tidyDataset(train.dataset, features, labels)
+    testDataset <- tidyDataset(test.dataset, features, labels)
     bind_rows(trainDataset, testDataset)
 }
 
@@ -23,33 +29,18 @@ processAveragesDataset <- function(dataset) {
     # Arguments:
     #    dataset - the tidy dataset as returned by processHARDataset
     dataset %>%
-        melt(id.vars = c("Subject.Id", "Activity.Name")) %>%
-        group_by(Subject.Id, Activity.Name, variable) %>%
-        dcast(Subject.Id + Activity.Name ~ variable, mean)
+        melt(id.vars = c("subject.id", "activity.name")) %>%
+        group_by(subject.id, activity.name, variable) %>%
+        dcast(subject.id + activity.name ~ variable, mean)
 }
 
-readData <- function(zipFilename, filename) {
-    # Read the data located in the provided file inside the zip archive.
-    #
-    # Arguments:
-    #    zipFilename - the name of the zip file containing data files
-    #    filename - the name of the data file inside the zip
-    #
-    # Examples:
-    # readData("data/UCI_HAR_Dataset.zip", "features.txt")
-    # readData("data/UCI_HAR_Dataset.zip", "train/X_train.txt")
-    #
-    conn <- unz(zipFilename, filename = sprintf("UCI HAR Dataset/%s", filename))
-    tbl_df(read.table(conn, stringsAsFactors = FALSE))
-}
-
-tidyFeatures <- function(featuresData) {
+tidyFeatures <- function(features.data) {
     # Tidy the features dataset as read from the features file to provide better
     # column names and to transform the names using tidyFeatureName.
     #
     # We also retain only the features that contain mean() and std() in their
     # name as required by the assignment.
-    featuresData %>%
+    features.data %>%
         rename(id = V1, name = V2) %>%
         filter(
             grepl("mean()", name, fixed = T) |
@@ -59,56 +50,45 @@ tidyFeatures <- function(featuresData) {
         mutate(name = tidyFeatureName(name))
 }
 
-tidyFeatureName <- function(rawFeatureName) {
+tidyFeatureName <- function(raw.feature.name) {
     # Create a feature name from the raw feature by splitting by
     # non-alphanumeric characters and pasting the parts back by dots
-    nameParts <- strsplit(rawFeatureName, split="[^[:alnum:]]")[[1]]
-    nameParts <- nameParts[nameParts != ""]
-    paste(nameParts, collapse=".")
+    name.parts <- strsplit(raw.feature.name, split="[^[:alnum:]]")[[1]]
+    name.parts <- name.parts[name.parts != ""]
+    paste(name.parts, collapse=".")
 }
 
-tidyLabels <- function(labelsData) {
+tidyLabels <- function(labels.data) {
     # Tidy the labels dataset as read from the labels file to provide better
     # column names and to transform the names using makeLabelName.
-    labelsData %>%
+    labels.data %>%
         rename(id = V1, name = V2) %>%
         rowwise() %>%
         mutate(name = tidyLabelName(name))
 }
 
-tidyLabelName <- function(rawLabelName) {
+tidyLabelName <- function(raw.label.name) {
     # Create a label name from the raw label by spliting it by '_' and
     # capitalizing the first letter of each word
-    nameParts <- strsplit(tolower(rawLabelName), "_")[[1]]
+    name.parts <- strsplit(tolower(raw.label.name), "_")[[1]]
     paste(
-        toupper(substring(nameParts, 1, 1)),
-        substring(nameParts, 2),
+        toupper(substring(name.parts, 1, 1)),
+        substring(name.parts, 2),
         sep="",
         collapse=" ")
 }
 
-tidyDataset <- function(zipFilename, type, features, labels) {
-    # Fetch the feature vectors, labels and subjects from the dataset of the
-    # provided type and return a tidy dataset for all the required data.
-    #
-    # Arguments:
-    #    zipFilename - the name of the zip file containing data files
-    #    type - one of 'train' or 'test', representing the data set to fetch
-    #    features - the dataset of features
-    #    labels - the dataset of labels
-    #
-    subjectsDataset <-
-        readData(zipFilename, sprintf("%s/subject_%s.txt", type, type)) %>%
-        select(Subject.Id = V1)
+tidyDataset <- function(messy.dataset, features, labels) {
+    # Tidy the messy model dataset composed of subjects, labels and feature
+    # vectors into a single tidy data frame.
+    subjects.dataset <- messy.dataset$subjects %>% select(subject.id = V1)
 
-    labelsDataset <-
-        readData(zipFilename, sprintf("%s/y_%s.txt", type, type)) %>%
+    labels.dataset <- messy.dataset$labels %>%
         inner_join(labels, by = c("V1" = "id")) %>%
-        select(Activity.Name = name)
+        select(activity.name = name)
 
-    featuresDataset <- readData(zipFilename, sprintf("%s/X_%s.txt", type, type))
-    featuresDataset <- featuresDataset[, features$id]
-    names(featuresDataset) <- features$name
+    features.dataset <- messy.dataset$features[, features$id]
+    names(features.dataset) <- features$name
 
-    cbind(subjectsDataset, labelsDataset, featuresDataset)
+    bind_cols(subjects.dataset, labels.dataset, features.dataset)
 }
