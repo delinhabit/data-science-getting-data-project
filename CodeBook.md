@@ -1,10 +1,11 @@
 ## Getting and Cleaning Data
-### Course Project - CodeBook for AVGDataset.txt
+### Course Project - CodeBook
 
-The averages dataset represents the averages of a subset of measurements 
-from the original dataset for each subject and each activity. Therefore the 
-dataset contains 180 observations (30 subject x 6 activities) for 68 variables
-explained in detail in the following sections.
+The averages dataset (stored in `data/AVGDataset.txt`) represents the averages
+of a subset of measurements from the original dataset for each subject and each 
+activity. Therefore the dataset contains 180 observations 
+(30 subject x 6 activities) for 68 variables explained in detail in the 
+following sections.
 
 #### Fixed variables
 
@@ -47,11 +48,13 @@ transformed as follows:
 #### Measurement variables
 
 All the measurement variables are of _numeric_ type and represent the averages
-of each corresponding measurements for each activity and each subject.
+of each corresponding measurements for each activity and each subject. Because
+the original measurements were normalized by the original authors, the final
+measurements are unitless and are from the `[-1, 1]` interval.
 
 The measurements were loaded from the train and test datasets located in the 
-`train/` and `test/` directories respectively, and were merged together into a
-single dataset. 
+`train/X_train.txt` and `test/X_test.txt` files respectively,
+and were merged together into a single dataset.
 
 For this analysis we required only the measurements of mean and standard 
 deviations so we only selected the corresponding columns that contained
