@@ -1,4 +1,4 @@
-source("download.R")
+source("io.R")
 
 test_inferFilenameFromUrl <- function() {
     filename <- inferFilenameFromUrl("https://data.company.org/files/data.zip")
