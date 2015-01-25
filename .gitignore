@@ -12,3 +12,6 @@
 
 # Data directory
 data/
+
+# Generated HTML output files from the corresponding *.md documents
+*.html
