@@ -1,8 +1,9 @@
 library(dplyr)
+library(reshape2)
 
-processHARDataset <- function(zipFilename) {
+processDataset <- function(zipFilename) {
     # Process the UCI HAR dataset located in the provided file and create a
-    # tidy dataset as required by step 4 ot the assignment
+    # tidy dataset as required by step 4 ot the assignment.
     #
     # Arguments:
     #    zipFilename - path to the zip file containing the UCI HAR Dataset
@@ -13,6 +14,18 @@ processHARDataset <- function(zipFilename) {
     trainDataset <- tidyDataset(zipFilename, "train", features, labels)
     testDataset <- tidyDataset(zipFilename, "test", features, labels)
     bind_rows(trainDataset, testDataset)
+}
+
+processAveragesDataset <- function(dataset) {
+    # Process the tidy dataset obtained at step 4 and return a new tidy data set
+    # containing averages of each variable for each activity and each subject.
+    #
+    # Arguments:
+    #    dataset - the tidy dataset as returned by processHARDataset
+    dataset %>%
+        melt(id.vars = c("Subject.Id", "Activity.Name")) %>%
+        group_by(Subject.Id, Activity.Name, variable) %>%
+        dcast(Subject.Id + Activity.Name ~ variable, mean)
 }
 
 readData <- function(zipFilename, filename) {
@@ -98,13 +111,4 @@ tidyDataset <- function(zipFilename, type, features, labels) {
     names(featuresDataset) <- features$name
 
     cbind(subjectsDataset, labelsDataset, featuresDataset)
-}
-
-processAveragesDataset <- function(dataset) {
-    # Process the tidy dataset obtained at step 4 and return a new tidy data set
-    # containing all the variables as required by step 5 of the assignment.
-    #
-    # Arguments:
-    #    dataset - the tidy dataset as returned by processHARDataset
-    #
 }
