@@ -16,10 +16,9 @@ processDataset <- function(train.dataset, test.dataset, features, labels) {
     #
     features <- tidyFeatures(features)
     labels <- tidyLabels(labels)
+    messy.dataset <- mergeMessyDatasets(train.dataset, test.dataset)
 
-    trainDataset <- tidyDataset(train.dataset, features, labels)
-    testDataset <- tidyDataset(test.dataset, features, labels)
-    bind_rows(trainDataset, testDataset)
+    tidyDataset(messy.dataset, features, labels)
 }
 
 processAveragesDataset <- function(dataset) {
@@ -76,6 +75,14 @@ tidyLabelName <- function(raw.label.name) {
         substring(name.parts, 2),
         sep="",
         collapse=" ")
+}
+
+mergeMessyDatasets <- function(dataset1, dataset2) {
+    # Merge two messy datasets composed of subjects, labels and features
+    list(
+        subjects = bind_rows(dataset1$subjects, dataset2$subjects),
+        labels = bind_rows(dataset1$labels, dataset2$labels),
+        features = bind_rows(dataset1$features, dataset2$features))
 }
 
 tidyDataset <- function(messy.dataset, features, labels) {

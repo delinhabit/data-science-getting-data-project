@@ -53,6 +53,22 @@ test_tidyFeatures <- function() {
             stringsAsFactors = FALSE))
 }
 
+test_mergeMessyDatasets <- function() {
+    # The messy.dataset, features and labels variables are defined in the test
+    # runner script so that they are available here
+    merged <- mergeMessyDatasets(messy.dataset, messy.dataset)
+
+    checkEquals(
+        merged$subjects,
+        bind_rows(messy.dataset$subjects, messy.dataset$subjects))
+    checkEquals(
+        merged$labels,
+        bind_rows(messy.dataset$labels, messy.dataset$labels))
+    checkEquals(
+        merged$features,
+        bind_rows(messy.dataset$features, messy.dataset$features))
+}
+
 test_tidyDataset <- function() {
     # The messy.dataset, features and labels variables are defined in the test
     # runner script so that they are available here
