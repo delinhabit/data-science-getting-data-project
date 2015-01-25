@@ -1,34 +1,54 @@
 source("analysis.R")
 
-test_makeLabelName <- function() {
-    checkEquals(makeLabelName("WALKING"), "Walking")
-    checkEquals(makeLabelName("WALKING_DOWNSTAIRS"), "Walking Downstairs")
+test_tidyLabelName <- function() {
+    checkEquals(tidyLabelName("WALKING"), "Walking")
+    checkEquals(tidyLabelName("WALKING_DOWNSTAIRS"), "Walking Downstairs")
 }
 
-test_getLabels <- function() {
+test_tidyFeatureName <- function() {
+    checkEquals(tidyFeatureName("tBodyAcc-mean()-X"), "tBodyAcc.mean.X")
+    checkEquals(
+        tidyFeatureName("tGravityAcc-arCoeff()-Z,4"),
+        "tGravityAcc.arCoeff.Z.4")
+    checkEquals(
+        tidyFeatureName("tBodyAccJerkMag-arCoeff()4"),
+        "tBodyAccJerkMag.arCoeff.4")
+    checkEquals(
+        tidyFeatureName("fBodyAcc-bandsEnergy()-49,64"),
+        "fBodyAcc.bandsEnergy.49.64")
+    checkEquals(
+        tidyFeatureName("angle(tBodyAccMean,gravity)"),
+        "angle.tBodyAccMean.gravity")
+}
+
+test_tidyLabels <- function() {
     labelsData <- data.frame(
-        id = c(1, 2, 3),
-        name = c("WALKING", "WALKING_UPSTAIRS", "RUNNING"))
+        V1 = c(1, 2, 3),
+        V2 = c("WALKING", "WALKING_UPSTAIRS", "RUNNING"),
+        stringsAsFactors = FALSE)
 
     checkEquals(
-        getLabels(labelsData),
-        list("1" = "Walking", "2" = "Walking Upstairs", "3" = "Running"))
+        tidyLabels(labelsData),
+        data.frame(
+            id = c(1, 2, 3),
+            name = c("Walking", "Walking Upstairs", "Running"),
+            stringsAsFactors = FALSE))
 }
 
-test_getFeatures <- function() {
+test_tidyFeatures <- function() {
     featuresData <- data.frame(
-        id = c(1, 5, 19, 43, 77),
-        name = c(
+        V1 = c(1, 19, 44, 77),
+        V2 = c(
             "tBodyAcc-mean()-X",
-            "tBodyAcc-std()-Y",
             "tBodyAcc-energy()-Z",
-            "tGravityAcc-mean()-Z",
-            "tGravityAcc-arCoeff()-Z,4"))
+            "tGravityAcc-std()-X",
+            "tGravityAcc-arCoeff()-Z,4"),
+        stringsAsFactors = FALSE)
 
     checkEquals(
-        getFeatures(featuresData),
-        list(
-            "1" = "tBodyAcc-mean()-X",
-            "5" = "tBodyAcc-std()-Y",
-            "43" = "tGravityAcc-mean()-Z"))
+        tidyFeatures(featuresData),
+        data.frame(
+            id = c(1, 44),
+            name = c("tBodyAcc.mean.X", "tGravityAcc.std.X"),
+            stringsAsFactors = FALSE))
 }

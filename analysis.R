@@ -7,12 +7,12 @@ processHARDataset <- function(zipFilename) {
     # Arguments:
     #    zipFilename - path to the zip file containing the UCI HAR Dataset
     #
-    features <- getFeatures(readData(zipFilename, "features.txt"))
-    labels <- getLabels(readData(zipFilename, "activity_labels.txt"))
+    features <- tidyFeatures(readData(zipFilename, "features.txt"))
+    labels <- tidyLabels(readData(zipFilename, "activity_labels.txt"))
 
-    trainDataset <- getDataset(zipFilename, "train", features, labels)
-    testDataset <- getDataset(zipFilename, "test", features, labels)
-    rbind(trainDataset, testDataset)
+    trainDataset <- tidyDataset(zipFilename, "train", features, labels)
+    testDataset <- tidyDataset(zipFilename, "test", features, labels)
+    bind_rows(trainDataset, testDataset)
 }
 
 readData <- function(zipFilename, filename) {
@@ -27,49 +27,46 @@ readData <- function(zipFilename, filename) {
     # readData("data/UCI_HAR_Dataset.zip", "train/X_train.txt")
     #
     conn <- unz(zipFilename, filename = sprintf("UCI HAR Dataset/%s", filename))
-    read.table(conn)
+    tbl_df(read.table(conn, stringsAsFactors = FALSE))
 }
 
-getFeatures <- function(featuresData, filters = c("mean()", "std()")) {
-    # Extract the relevant feature names from the features data as a list
-    # mapping label ids to names.
+tidyFeatures <- function(featuresData) {
+    # Tidy the features dataset as read from the features file to provide better
+    # column names and to transform the names using tidyFeatureName.
     #
-    # Arguments:
-    #    featuresData - the features data as retrieved from features.txt
-    #    filters - a character vector by which to filter the feature names.
-    #              By default will extract only features that contain
-    #              'mean()' and 'std()' in their names.
-    #
-    filterBy <- rep(FALSE, times = length(featuresData[2]))
-    for (filter in filters) {
-        filterBy <- filterBy | sapply(
-            featuresData[2],
-            function(x) { grepl(filter, x, fixed = T) })
-    }
-    featuresData <- featuresData[filterBy, ]
-
-    features <- list()
-    apply(featuresData, 1, function(x) {
-        id <- as.character(as.numeric(x[1]))
-        features[[id]] <<- as.character(x[2])
-    })
-    features
+    # We also retain only the features that contain mean() and std() in their
+    # name as required by the assignment.
+    featuresData %>%
+        rename(id = V1, name = V2) %>%
+        filter(
+            grepl("mean()", name, fixed = T) |
+            grepl("std()", name, fixed = T)
+        ) %>%
+        rowwise() %>%
+        mutate(name = tidyFeatureName(name))
 }
 
-getLabels <- function(labelsData) {
-    # Extract the labels from the labels data as a list mapping label ids to
-    # names.
-    labelNames <- list()
-    apply(labelsData, 1, function(x) {
-        labelNames[[x[1]]] <<- makeLabelName(x[2])
-    })
-    labelNames
+tidyFeatureName <- function(rawFeatureName) {
+    # Create a feature name from the raw feature by splitting by
+    # non-alphanumeric characters and pasting the parts back by dots
+    nameParts <- strsplit(rawFeatureName, split="[^[:alnum:]]")[[1]]
+    nameParts <- nameParts[nameParts != ""]
+    paste(nameParts, collapse=".")
 }
 
-makeLabelName <- function(rawLabel) {
+tidyLabels <- function(labelsData) {
+    # Tidy the labels dataset as read from the labels file to provide better
+    # column names and to transform the names using makeLabelName.
+    labelsData %>%
+        rename(id = V1, name = V2) %>%
+        rowwise() %>%
+        mutate(name = tidyLabelName(name))
+}
+
+tidyLabelName <- function(rawLabelName) {
     # Create a label name from the raw label by spliting it by '_' and
     # capitalizing the first letter of each word
-    nameParts <- strsplit(tolower(rawLabel), "_")[[1]]
+    nameParts <- strsplit(tolower(rawLabelName), "_")[[1]]
     paste(
         toupper(substring(nameParts, 1, 1)),
         substring(nameParts, 2),
@@ -77,30 +74,28 @@ makeLabelName <- function(rawLabel) {
         collapse=" ")
 }
 
-getDataset <- function(zipFilename, type, features, labels) {
+tidyDataset <- function(zipFilename, type, features, labels) {
     # Fetch the feature vectors, labels and subjects from the dataset of the
-    # provided type and return a data frame containing all the data.
+    # provided type and return a tidy dataset for all the required data.
     #
     # Arguments:
     #    zipFilename - the name of the zip file containing data files
     #    type - one of 'train' or 'test', representing the data set to fetch
-    #    features - a list of features to consider. The tags are the feature ids
-    #               and the values are the feature names
-    #    labels - the list of label names where the tags are the label ids.
+    #    features - the dataset of features
+    #    labels - the dataset of labels
     #
+    subjectsDataset <-
+        readData(zipFilename, sprintf("%s/subject_%s.txt", type, type)) %>%
+        select(Subject.Id = V1)
+
+    labelsDataset <-
+        readData(zipFilename, sprintf("%s/y_%s.txt", type, type)) %>%
+        inner_join(labels, by = c("V1" = "id")) %>%
+        select(Activity.Name = name)
+
     featuresDataset <- readData(zipFilename, sprintf("%s/X_%s.txt", type, type))
-    featuresDataset <- featuresDataset[, as.numeric(names(features))]
-    names(featuresDataset) <- as.character(features)
-
-    labelsDataset <- readData(zipFilename, sprintf("%s/y_%s.txt", type, type))
-    names(labelsDataset) <- c("Activity.Name")
-    labelsDataset$Activity.Name <- as.character(
-        labels[labelsDataset$Activity.Name])
-
-    subjectsDataset <- readData(
-        zipFilename,
-        sprintf("%s/subject_%s.txt", type, type))
-    names(subjectsDataset) <- c("Subject.Id")
+    featuresDataset <- featuresDataset[, features$id]
+    names(featuresDataset) <- features$name
 
     cbind(subjectsDataset, labelsDataset, featuresDataset)
 }
