@@ -6,10 +6,9 @@ inputUrl <- paste(
       "getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip"),
     collapse="/")
 inputFile <- downloadData(inputUrl)
-outputFile <- "data/tidyHARDataset.txt"
 
-kLabelsFilename <- "UCI\ HAR\ Dataset/activity_labels.txt"
-kFeaturesFilename <- "UCI\ HAR\ Dataset/features.txt"
+harDataset <- processHARDataset(inputFile)
+write.table(harDataset, file = "data/HARDataset.txt", row.names = FALSE)
 
-dataSet <- processHARDataset(inputFile)
-saveHARDataset(dataSet, outputFile)
+averagesDataset <- processAveragesDataset(harDataset)
+write.table(averagesDataset, file = "data/AVGDataset.txt", row.names = FALSE)

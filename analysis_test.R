@@ -1,35 +1,32 @@
 source("analysis.R")
 
+test_makeLabelName <- function() {
+    checkEquals(makeLabelName("WALKING"), "Walking")
+    checkEquals(makeLabelName("WALKING_DOWNSTAIRS"), "Walking Downstairs")
+}
+
 test_getLabels <- function() {
-    filename <- tempfile(fileext = ".txt")
-    conn <- file(filename, "w")
-    writeLines(c("1 WALKING", "2 LAYING", "3 RUNNING"), conn)
-    close(conn)
+    labelsData <- data.frame(
+        id = c(1, 2, 3),
+        name = c("WALKING", "WALKING_UPSTAIRS", "RUNNING"))
 
-    labels <- getLabels(file(filename, "r"))
-    unlink(filename)
-
-    checkEquals(labels, list("1" = "Walking", "2" = "Laying", "3" = "Running"))
+    checkEquals(
+        getLabels(labelsData),
+        list("1" = "Walking", "2" = "Walking Upstairs", "3" = "Running"))
 }
 
 test_getFeatures <- function() {
-    filename <- tempfile(fileext = ".txt")
-    conn <- file(filename, "w")
-    writeLines(
-        c(" 1 tBodyAcc-mean()-X",
-          " 5 tBodyAcc-std()-Y",
-          "19 tBodyAcc-energy()-Z",
-          "43 tGravityAcc-mean()-Z",
-          "77 tGravityAcc-arCoeff()-Z,4"),
-        conn)
-    close(conn)
-
-    features <- getFeatures(file(filename, "r"))
-    message(str(features))
-    unlink(filename)
+    featuresData <- data.frame(
+        id = c(1, 5, 19, 43, 77),
+        name = c(
+            "tBodyAcc-mean()-X",
+            "tBodyAcc-std()-Y",
+            "tBodyAcc-energy()-Z",
+            "tGravityAcc-mean()-Z",
+            "tGravityAcc-arCoeff()-Z,4"))
 
     checkEquals(
-        features,
+        getFeatures(featuresData),
         list(
             "1" = "tBodyAcc-mean()-X",
             "5" = "tBodyAcc-std()-Y",
